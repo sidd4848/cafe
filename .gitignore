@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+frontend/.env
+.firebase/
+*.log
+backend/scripts/*.local.json

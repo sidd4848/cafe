@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+/* Warm café palette, defined once as tokens. */
+@theme {
+  --color-bean-950: #1c120c;
+  --color-bean-900: #2b1d14;
+  --color-bean-800: #3d2a1d;
+  --color-bean-700: #5a3f2c;
+  --color-bean-500: #8a6a52;
+  --color-bean-300: #bfa58f;
+
+  --color-cream-50: #fdfaf5;
+  --color-cream-100: #f8f1e6;
+  --color-cream-200: #f1e5d3;
+  --color-cream-300: #e6d4bb;
+
+  --color-ember-600: #b85a2e;
+  --color-ember-500: #d9794a;
+  --color-ember-100: #fbe6d9;
+
+  --color-leaf-600: #3f7d4e;
+  --color-leaf-100: #e1f0e3;
+  --color-honey-500: #d9a23a;
+  --color-honey-100: #fbf0d7;
+  --color-berry-600: #b23a48;
+  --color-berry-100: #f8dfe2;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-cream-100 font-sans text-bean-900 antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+  input, textarea, select {
+    @apply rounded-xl border border-cream-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-ember-500 focus:ring-2 focus:ring-ember-100;
+  }
+}
+
+@utility card {
+  @apply rounded-2xl border border-cream-200 bg-cream-50 shadow-[0_1px_2px_rgba(43,29,20,0.05)];
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-bean-900 text-cream-50 hover:bg-bean-800;
+}
+@utility btn-accent {
+  @apply btn bg-ember-600 text-white hover:bg-ember-500;
+}
+@utility btn-ghost {
+  @apply btn border border-cream-300 bg-white text-bean-900 hover:bg-cream-100;
+}
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-cream-300 bg-white px-3 py-1 text-xs font-medium text-bean-700 transition;
+}
+@utility chip-on {
+  @apply border-bean-900 bg-bean-900 text-cream-50;
+}
+@utility label {
+  @apply mb-1.5 block text-xs font-medium tracking-wide text-bean-500 uppercase;
+}
+
+.scroll-thin::-webkit-scrollbar { height: 0; width: 0; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.25s ease-out both; }

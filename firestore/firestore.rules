@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// Cafe Companion (database: cafedata)
+//
+// Clients never write: every mutation goes through cafe-api (Admin SDK, which bypasses
+// these rules) so it can validate, moderate and recompute ETAs. The browser only holds
+// read-only realtime listeners on the few documents that need to update live.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isStaff() {
+      return signedIn() && request.auth.token.role in ['staff', 'manager'];
+    }
+
+    // Cafe info, live wait stats and busyness curves: any signed-in user.
+    // Menu docs carry embeddings, so the UI reads the menu through the API instead.
+    match /cafes/{cafeId} {
+      allow read: if signedIn();
+      match /stats/{doc} { allow read: if signedIn(); }
+      match /busyness/{doc} { allow read: if signedIn(); }
+      // Floor plan, servers on shift: staff console only.
+      match /tables/{tableId} { allow read: if isStaff(); }
+      match /shift/{uid} { allow read: if isStaff(); }
+      // Waitlist: staff see everyone; a guest sees their own place in line.
+      match /waitlist/{partyId} {
+        allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+      }
+    }
+
+    // Order tracker (guest) and barista board (staff).
+    match /orders/{orderId} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isStaff());
+    }
+
+    // Own profile only.
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Sparks: sender and recipient only.
+    match /sparks/{sparkId} {
+      allow read: if signedIn() &&
+        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+    }
+
+    // Connections and their chat: the two members only.
+    match /connections/{connId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.members;
+      match /messages/{msgId} {
+        allow read: if signedIn() &&
+          request.auth.uid in get(/databases/$(database)/documents/connections/$(connId)).data.members;
+      }
+    }
+
+    // Everything else (presence, connectProfiles, blocks, reports, orderSessions,
+    // cafePrivate, staffInvites, menu) is server-only.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
