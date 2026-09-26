@@ -1,11 +1,16 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { config } from './config';
 
 // Reuse the app across Vite hot reloads (initializeApp twice throws duplicate-app).
 export const app = getApps().length ? getApp() : initializeApp(config.firebase);
 export const auth = getAuth(app);
+
+// Local testing only: point Auth at the Firebase emulator (never set in the deployed image).
+if (import.meta.env.VITE_AUTH_EMULATOR) {
+  connectAuthEmulator(auth, import.meta.env.VITE_AUTH_EMULATOR, { disableWarnings: true });
+}
 
 /**
  * Read-only realtime listeners (order tracker, barista board, live wait, Connect chat).

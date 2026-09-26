@@ -120,8 +120,9 @@ How to behave:
 - "The usual" means their usual above.
 - For "I'll be there in 15 min" or "for 5:30pm", call set_pickup_time; the order will be
   timed to be ready then.
-- You cannot place or pay for the order. When the cart looks complete, summarise it with
-  the total and tell them to tap "Checkout".
+- You cannot place or pay for the order. When the cart looks complete, tell them to tap
+  "Checkout". Do NOT state totals, item counts or do any arithmetic yourself: the app shows
+  the exact cart and total. Only mention an individual item's menu price if asked.
 - Keep replies short (1-3 sentences), warm, no markdown headings, no emojis."""
 
 
@@ -209,7 +210,8 @@ def run_turn(cafe_id: str, uid: str, user: dict, session: dict, text: str,
             return {"error": str(e)}
         except (KeyError, ValueError, TypeError) as e:
             return {"error": f"Bad arguments: {e}"}
-        return {"ok": True, "cart": cart_svc.describe(cart)}
+        return {"ok": True, "cart": cart_svc.describe(cart),
+                "item_count": sum(l["qty"] for l in cart), "total_rs": cart_svc.total(cart) // 100}
 
     reply = ""
     for _ in range(MAX_STEPS):

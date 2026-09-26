@@ -53,7 +53,11 @@ function Chat() {
   const { session, chat, busy } = useSession();
   const [text, setText] = useState('');
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ behavior: 'smooth' }), [session?.messages.length, busy]);
+  useEffect(() => {
+    // Braces matter: newer Chrome returns a Promise from scrollIntoView, and React
+    // would treat a returned value as the effect's cleanup and crash on unmount.
+    end.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [session?.messages.length, busy]);
   if (!session) return <PageLoader />;
 
   const send = (t: string) => {
@@ -96,13 +100,20 @@ function Chat() {
           </div>
         ))}
         {busy && (
-          <div className="flex items-center gap-2 text-sm text-bean-500"><Spinner className="h-4 w-4" /> Barista is thinking…</div>
+          <div className="rise flex justify-start" aria-live="polite">
+            <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-cream-200 bg-cream-50 px-3.5 py-3">
+              <span className="flex gap-1">
+                {[0, 1, 2].map((i) => <span key={i} className="typing-dot h-1.5 w-1.5 rounded-full bg-bean-500" style={{ animationDelay: `${i * 0.2}s` }} />)}
+              </span>
+              <span className="text-xs text-bean-500">Barista is on it…</span>
+            </div>
+          </div>
         )}
         <div ref={end} />
       </div>
       <form onSubmit={onSubmit} className="sticky bottom-[132px] mt-4 flex gap-2 rounded-2xl border border-cream-300 bg-white p-1.5 shadow-sm">
-        <input className="flex-1 border-0 focus:ring-0" placeholder="Ask for anything on the menu…" value={text} onChange={(e) => setText(e.target.value)} maxLength={500} />
-        <button className="btn-accent px-3" disabled={!text.trim() || busy} aria-label="Send"><Send className="h-4 w-4" /></button>
+        <input className="flex-1 border-0 focus:ring-0" placeholder={busy ? 'Waiting for the barista…' : 'Ask for anything on the menu…'} value={text} onChange={(e) => setText(e.target.value)} maxLength={500} />
+        <button className="btn-accent px-3" disabled={!text.trim() || busy} aria-label="Send">{busy ? <Spinner className="h-4 w-4 text-white" /> : <Send className="h-4 w-4" />}</button>
       </form>
     </div>
   );

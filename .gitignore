@@ -8,3 +8,4 @@ frontend/.env
 .firebase/
 *.log
 backend/scripts/*.local.json
+frontend/.env.local

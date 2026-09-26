@@ -26,7 +26,11 @@ export default function ConnectChat() {
   const [meetOpen, setMeetOpen] = useState(false);
   const [safety, setSafety] = useState(false);
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ behavior: 'smooth' }), [messages.length]);
+  useEffect(() => {
+    // Braces matter: newer Chrome returns a Promise from scrollIntoView, and React
+    // would treat a returned value as the effect's cleanup and crash on unmount.
+    end.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
 
   if (error) return <ErrorNote>{error}</ErrorNote>;
   if (!conn) return <PageLoader />;

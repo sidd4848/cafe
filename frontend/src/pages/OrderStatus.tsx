@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarClock, CheckCircle2, ChefHat, Coffee, ListOrdered, Receipt } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -17,12 +17,21 @@ const STEPS = [
 /** Live tracker: a Firestore listener on the order doc, so ETA changes appear instantly. */
 export default function OrderStatus() {
   const { id } = useParams();
-  const { data: order, error } = useDoc<Order>(id ? `orders/${id}` : null);
+  const { data: live, error } = useDoc<Order>(id ? `orders/${id}` : null);
+  // If the realtime listener can't connect (network, blocked websockets), poll the API.
+  const [polled, setPolled] = useState<Order | null>(null);
+  useEffect(() => {
+    if (!error || !id) return;
+    const load = () => api.get<Order>(`/orders/${id}`).then(setPolled).catch(() => undefined);
+    load();
+    const t = setInterval(load, 5000);
+    return () => clearInterval(t);
+  }, [error, id]);
+  const order = live ?? polled;
   const { replace } = useSession();
   const now = useNow(1000);
   const [err, setErr] = useState<string | null>(null);
 
-  if (error) return <ErrorNote>{error}</ErrorNote>;
   if (!order) return <PageLoader />;
 
   const step = order.status === 'collected' ? 3 : STEPS.findIndex((s) => s.key === order.status);

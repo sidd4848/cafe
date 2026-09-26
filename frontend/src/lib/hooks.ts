@@ -37,16 +37,39 @@ export function dateify(data: DocumentData): DocumentData {
   return out;
 }
 
+/**
+ * Unsubscribe without letting a Firestore SDK failure escape into React's cleanup phase:
+ * an exception there unmounts the whole app, which is far worse than a stale listener.
+ */
+function safeUnsub(unsub: () => void) {
+  return () => {
+    try {
+      unsub();
+    } catch (e) {
+      console.warn('Listener cleanup failed', e);
+    }
+  };
+}
+
+function safeListen(start: () => () => void, onError: (msg: string) => void): () => void {
+  try {
+    return safeUnsub(start());
+  } catch (e) {
+    onError((e as Error).message);
+    return () => undefined;
+  }
+}
+
 export function useDoc<T>(path: string | null, map: (d: DocumentData) => DocumentData = isoify) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!path) return;
-    return onSnapshot(
+    return safeListen(() => onSnapshot(
       doc(firestore, path),
       (snap) => setData(snap.exists() ? ({ id: snap.id, ...map(snap.data()) } as T) : null),
       (e) => setError(e.message),
-    );
+    ), setError);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
   return { data, error };
@@ -57,11 +80,11 @@ export function useQuery<T>(q: Query | null, key: string, map: (d: DocumentData)
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!q) return;
-    return onQuerySnapshot(
+    return safeListen(() => onQuerySnapshot(
       q,
       (snap) => setData(snap.docs.map((d) => ({ id: d.id, ...map(d.data()) }) as T)),
       (e) => setError(e.message),
-    );
+    ), setError);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   return { data, error };
