@@ -262,6 +262,7 @@ class CheckoutIn(BaseModel):
     notes: str = ""
     tableId: str | None = None      # dine-in: order to this table (from its QR)
     tableToken: str | None = None
+    nudgeId: str | None = None      # accepted peak-shift offer, redeemed for bonus beans
 
 
 def _order_out(oid: str, o: dict) -> dict:
@@ -285,7 +286,7 @@ def checkout(cafe_id: str, body: CheckoutIn, user: dict = Depends(require_user))
         table = floor.verify_table(cafe_id, body.tableId, body.tableToken or "")
     order = orders_svc.create(user["uid"], {**udoc, "email": user["email"]}, cafe_id, s.get("cart", []),
                               body.paymentMethod, None if table else (body.pickupAt or s.get("pickupAt")),
-                              source, body.notes, table)
+                              source, body.notes, table, body.nudgeId)
     _session_ref(user["uid"], cafe_id).delete()
     oid = order.pop("id")
     return _order_out(oid, order)

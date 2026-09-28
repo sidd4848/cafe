@@ -20,6 +20,8 @@ const StaffMenu = lazy(() => import('./pages/staff/MenuAdmin'));
 const StaffQR = lazy(() => import('./pages/staff/TableQR'));
 const StaffTeam = lazy(() => import('./pages/staff/Team'));
 const StaffFloor = lazy(() => import('./pages/staff/Floor'));
+const StaffImpact = lazy(() => import('./pages/staff/Impact'));
+const StaffGuests = lazy(() => import('./pages/staff/Guests'));
 
 export default function App() {
   return (
@@ -48,6 +50,8 @@ export default function App() {
           <Route element={<StaffLayout />}>
             <Route index element={<StaffBoard />} />
             <Route path="floor" element={<StaffFloor />} />
+            <Route path="impact" element={<StaffImpact />} />
+            <Route path="guests" element={<StaffGuests />} />
             <Route path="menu" element={<StaffMenu />} />
             <Route path="qr" element={<StaffQR />} />
             <Route path="team" element={<StaffTeam />} />

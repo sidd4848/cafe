@@ -63,7 +63,7 @@ def rebuild(cafe_id: str) -> dict:
               .where(filter=firestore.FieldFilter("placedAt", ">=", since)).stream()):
         o = s.to_dict()
         placed = o.get("placedAt")
-        if not isinstance(placed, datetime) or o.get("status") == "cancelled":
+        if not isinstance(placed, datetime) or o.get("status") == "cancelled" or o.get("synthetic"):
             continue
         local = placed.astimezone(zone)
         key = (local.weekday(), local.hour)

@@ -98,6 +98,8 @@ export interface Order {
   dineIn?: boolean;
   tableId?: string | null;
   tableLabel?: string | null;
+  guest?: { tier: string; visits: number; diet: string; avoid: string[]; firstVisit: boolean };
+  nudge?: { id: string; beans: number };
   createdAt: string;
   placedAt: string | null;
   startedAt?: string;

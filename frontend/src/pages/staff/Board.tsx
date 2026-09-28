@@ -81,6 +81,9 @@ export default function Board() {
                         <span className="rounded-lg bg-bean-900 px-2 py-0.5 font-display text-lg tracking-wider text-cream-50">{o.pickupCode}</span>
                         <span className="text-sm font-medium">{o.customerName}</span>
                         {o.dineIn && <span className="flex items-center gap-0.5 rounded bg-honey-100 px-1.5 text-[10px] font-bold"><Utensils className="h-3 w-3" />{o.tableLabel}</span>}
+                        {o.guest?.tier && o.guest.tier !== 'Bean' && <span className="rounded bg-bean-900 px-1.5 text-[10px] font-bold text-cream-50">{o.guest.tier.toUpperCase()}</span>}
+                        {o.guest?.firstVisit && <span className="rounded bg-leaf-100 px-1.5 text-[10px] font-bold text-leaf-600">FIRST VISIT</span>}
+                        {o.nudge && <span className="rounded bg-honey-100 px-1.5 text-[10px] font-bold text-bean-800">SHIFTED +{o.nudge.beans}</span>}
                         <span className={`ml-auto text-xs ${late ? 'font-semibold text-berry-600' : 'text-bean-500'}`}>{age}m</span>
                       </div>
                       <ul className="mt-2 space-y-0.5 text-sm">
@@ -88,6 +91,9 @@ export default function Board() {
                           <li key={l.lineId}><b>{l.qty}×</b> {l.name}{l.modifierLabels.length > 0 && <span className="text-bean-500"> · {l.modifierLabels.join(', ')}</span>}</li>
                         ))}
                       </ul>
+                      {o.guest && (o.guest.avoid.length > 0 || o.guest.diet === 'vegan') && (
+                        <p className="mt-1 rounded bg-berry-100 px-1.5 py-0.5 text-xs font-semibold text-berry-600">⚠ {[o.guest.diet === 'vegan' ? 'vegan' : null, ...o.guest.avoid.map((a) => `no ${a}`)].filter(Boolean).join(', ')}</p>
+                      )}
                       {o.notes && <p className="mt-1 text-xs text-ember-600">Note: {o.notes}</p>}
                       <div className="mt-2 flex items-center gap-2 text-xs text-bean-500">
                         {o.eta && status !== 'ready' && <span>ETA {clock(o.eta.readyAt)}</span>}

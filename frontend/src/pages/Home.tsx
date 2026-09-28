@@ -9,6 +9,7 @@ import { useLiveStats } from '@/lib/hooks';
 import type { Order, Recommendation } from '@/lib/types';
 import { ItemSheet } from '@/components/ItemSheet';
 import { StatusPill } from '@/components/ui';
+import { NudgeCard } from '@/components/Nudge';
 import type { MenuItem } from '@/lib/types';
 
 interface Welcome {
@@ -76,6 +77,8 @@ export default function Home() {
           <ArrowRight className="h-4 w-4 text-bean-500" />
         </Link>
       ))}
+
+      <NudgeCard />
 
       <div className="grid grid-cols-2 gap-3">
         <Link to="/order" className="card flex flex-col gap-2 p-4">

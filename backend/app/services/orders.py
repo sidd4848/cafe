@@ -20,6 +20,7 @@ from google.cloud import firestore
 from app.db import db, now
 from app.services import cart as cart_svc
 from app.services import eta
+from app.services import guests as guests_svc
 from app.services import loyalty
 from app.services import menu as menu_svc
 
@@ -42,7 +43,7 @@ def _pickup_code() -> str:
 
 def create(uid: str, user: dict, cafe_id: str, lines: list[dict], payment_method: str,
            scheduled_for: datetime | None, source: str, notes: str = "",
-           table: dict | None = None) -> dict:
+           table: dict | None = None, nudge_id: str | None = None) -> dict:
     cafe = menu_svc.get_cafe(cafe_id)
     menu = menu_svc.get_menu(cafe_id)
     if not lines:
@@ -76,6 +77,7 @@ def create(uid: str, user: dict, cafe_id: str, lines: list[dict], payment_method
         "uid": uid,
         "customerName": (user.get("displayName") or user.get("email") or "Guest").split(" ")[0],
         "cafeId": cafe_id,
+        "guest": guests_svc.order_snapshot(user),
         "items": [{**l, "prepSec": round(eta.item_prep(menu, l["itemId"])[0])} for l in items],
         "total": cart_svc.total(items),
         "notes": (notes or "")[:200],
@@ -101,6 +103,10 @@ def create(uid: str, user: dict, cafe_id: str, lines: list[dict], payment_method
     _record_interactions(uid, items, t)
     _update_usuals(uid, items)
     loyalty.record_order(uid, order["total"], t.astimezone(menu_svc.tz(cafe)).date().isoformat())
+    from app.services import peak
+    redeemed = peak.redeem(uid, nudge_id, scheduled_for or (t if status == "placed" else None), ref.id)
+    if redeemed:
+        ref.update({"nudge": redeemed})
     return {"id": ref.id, **ref.get().to_dict()}
 
 

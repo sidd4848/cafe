@@ -8,7 +8,7 @@ from app.auth import require_user
 from app.db import db, serialize
 from app.routers.customer import _order_out, _user_doc
 from app.services import context as context_svc
-from app.services import floor, loyalty, menu_filter
+from app.services import floor, loyalty, menu_filter, peak
 from app.services import menu as menu_svc
 from app.services import orders as orders_svc
 
@@ -93,3 +93,30 @@ class PayIn(BaseModel):
 def pay_table(cafe_id: str, table_id: str, body: PayIn, user: dict = Depends(require_user)):
     floor.verify_table(cafe_id, table_id, body.t)
     return orders_svc.pay_open_orders(user["uid"], cafe_id, table_id, body.method)
+
+
+# ---- Peak shaving: offers ----------------------------------------------------------
+
+def _nudge_out(n: dict | None) -> dict | None:
+    if not n:
+        return None
+    return {"id": n["id"], "fromAt": n["fromAt"].isoformat(), "toAt": n["toAt"].isoformat(),
+            "fromWaitSec": n.get("fromWaitSec"), "toWaitSec": n.get("toWaitSec"),
+            "beans": n["beans"], "status": n["status"]}
+
+
+@router.get("/cafes/{cafe_id}/nudge")
+def get_nudge(cafe_id: str, context: str = "home", user: dict = Depends(require_user)):
+    """A personal offer to shift out of an upcoming rush, or null."""
+    if context not in {"home", "checkout"}:
+        context = "home"
+    return _nudge_out(peak.offer(cafe_id, user["uid"], _user_doc(user["uid"]), context))
+
+
+class NudgeResponse(BaseModel):
+    accept: bool
+
+
+@router.post("/nudges/{nudge_id}/respond")
+def respond_nudge(nudge_id: str, body: NudgeResponse, user: dict = Depends(require_user)):
+    return peak.respond(user["uid"], nudge_id, body.accept)

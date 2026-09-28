@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { CalendarClock, CreditCard, Minus, Plus, ShoppingBag, Smartphone, Store, Trash2, Utensils, Zap } from 'lucide-react';
 import { useSession } from '@/context/SessionContext';
 import { api } from '@/lib/api';
-import { dayClock, minutes, rupees, toLocalInput } from '@/lib/format';
+import { clock, dayClock, minutes, rupees, toLocalInput } from '@/lib/format';
 import { useLiveStats } from '@/lib/hooks';
 import type { Order } from '@/lib/types';
 import { ErrorNote, Sheet, Spinner } from './ui';
+import { acceptNudge, acceptedNudge, clearAcceptedNudge, useNudge } from './Nudge';
 
 /** Sticky bar above the tab bar whenever the cart has something in it. */
 export function CartBar() {
@@ -47,6 +48,8 @@ export function CheckoutSheet() {
   const [error, setError] = useState<string | null>(null);
   const [table, setTable] = useState<TableCtx | null>(null);
   const [dineIn, setDineIn] = useState(false);
+  // Ordering ASAP straight into a rush: offer a quieter pickup slot for bonus beans.
+  const [rushOffer, setRushOffer] = useNudge('checkout', checkoutOpen && !session?.pickupAt);
 
   useEffect(() => {
     if (!checkoutOpen) return;
@@ -84,7 +87,9 @@ export function CheckoutSheet() {
         paymentMethod: method,
         pickupAt,
         ...(dineIn && table ? { tableId: table.table, tableToken: table.token } : {}),
+        ...(acceptedNudge() && pickupAt ? { nudgeId: acceptedNudge()!.id } : {}),
       });
+      clearAcceptedNudge();
       await reload();
       close();
       nav(`/orders/${order.id}`);
@@ -134,6 +139,20 @@ export function CheckoutSheet() {
             <div className="mt-5 grid grid-cols-2 gap-2">
               <button onClick={() => setDineIn(true)} className={`card flex items-center gap-2 px-3 py-3 text-sm ${dineIn ? 'border-bean-900 ring-1 ring-bean-900' : ''}`}><Utensils className="h-4 w-4 text-ember-600" /> To {table.label}</button>
               <button onClick={() => setDineIn(false)} className={`card flex items-center gap-2 px-3 py-3 text-sm ${!dineIn ? 'border-bean-900 ring-1 ring-bean-900' : ''}`}><ShoppingBag className="h-4 w-4 text-ember-600" /> Takeaway</button>
+            </div>
+          )}
+          {!dineIn && when === 'asap' && rushOffer?.status === 'offered' && (
+            <div className="rise mt-5 rounded-2xl border border-honey-500/60 bg-honey-100 p-3 text-sm">
+              <p><b>It's rush hour</b>{rushOffer.fromWaitSec ? ` (~${minutes(rushOffer.fromWaitSec)} wait)` : ''}. Pick up at <b>{clock(rushOffer.toAt)}</b> and get <b>+{rushOffer.beans} beans</b>?</p>
+              <div className="mt-2 flex gap-2">
+                <button className="btn-primary flex-1 py-2" onClick={async () => {
+                  await acceptNudge(rushOffer, setPickup);
+                  setRushOffer({ ...rushOffer, status: 'accepted' });
+                  setWhen('later');
+                  setPickupLocal(toLocalInput(new Date(rushOffer.toAt)));
+                }}>Yes, {clock(rushOffer.toAt)} · +{rushOffer.beans}</button>
+                <button className="btn-ghost py-2" onClick={() => setRushOffer(null)}>Now is fine</button>
+              </div>
             </div>
           )}
           {!dineIn && <>

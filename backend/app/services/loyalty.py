@@ -8,6 +8,8 @@ Rs 250 isn't pushed toward Rs 400 frappés, and vice versa.
 
 from datetime import datetime
 
+from google.cloud import firestore
+
 from app.db import db, now
 
 TIERS = [("Bean", 0), ("Roast", 250), ("Reserve", 800)]
@@ -59,6 +61,12 @@ def refund(uid: str, total_paise: int) -> None:
     loyalty["points"] = max(0, int(loyalty.get("points", 0)) - total_paise // 1000)
     loyalty["lifetimeSpend"] = max(0, int(loyalty.get("lifetimeSpend", 0)) - total_paise)
     ref.set({"loyalty": loyalty}, merge=True)
+
+
+def bonus(uid: str, beans: int) -> None:
+    """Award extra beans (e.g. for shifting a visit out of the rush)."""
+    db().collection("users").document(uid).set(
+        {"loyalty": {"points": firestore.Increment(beans), "bonusBeans": firestore.Increment(beans)}}, merge=True)
 
 
 def summary(user: dict) -> dict:

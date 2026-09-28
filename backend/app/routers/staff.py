@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr, Field
 from app.auth import require_manager, require_staff, set_role
 from app.db import db, now, serialize
 from app.routers.customer import _order_out
-from app.services import connect, eta, floor
+from app.services import connect, eta, floor, guests, peak
 from app.services import menu as menu_svc
 from app.services import orders as orders_svc
 
@@ -210,3 +210,47 @@ def table_codes(cafe_id: str, user: dict = Depends(require_staff)):
     """Today's QR token for every table (they rotate daily)."""
     return [{"id": t["id"], "label": t["label"], "seats": t["seats"], "zone": t["zone"],
              "token": floor.table_token(cafe_id, t["id"])} for t in floor.tables(cafe_id)]
+
+
+# ---- Peak shaving: forecast, impact, demo ------------------------------------------
+
+@router.get("/cafes/{cafe_id}/forecast")
+def forecast(cafe_id: str, date: str | None = None, user: dict = Depends(require_staff)):
+    return peak.forecast(cafe_id, date)
+
+
+@router.get("/cafes/{cafe_id}/impact")
+def impact(cafe_id: str, days: int = 7, user: dict = Depends(require_staff)):
+    return peak.impact(cafe_id, max(1, min(days, 28)))
+
+
+@router.post("/cafes/{cafe_id}/demo")
+def simulate_demo(cafe_id: str, user: dict = Depends(require_manager)):
+    return peak.simulate_demo(cafe_id)
+
+
+@router.delete("/cafes/{cafe_id}/demo")
+def clear_demo(cafe_id: str, user: dict = Depends(require_manager)):
+    return peak.clear_demo(cafe_id)
+
+
+# ---- Guests: profiles, segments, targeted campaigns ---------------------------------
+
+@router.get("/cafes/{cafe_id}/guests")
+def list_guests(cafe_id: str, segment: str | None = None, user: dict = Depends(require_staff)):
+    return guests.list_guests(cafe_id, segment, manager=user["role"] == "manager")
+
+
+@router.get("/cafes/{cafe_id}/guests/{uid}")
+def guest_detail(cafe_id: str, uid: str, user: dict = Depends(require_staff)):
+    return guests.detail(cafe_id, uid, manager=user["role"] == "manager")
+
+
+class CampaignIn(BaseModel):
+    segment: str
+    beans: int = 20
+
+
+@router.post("/cafes/{cafe_id}/campaigns")
+def campaign(cafe_id: str, body: CampaignIn, user: dict = Depends(require_staff)):
+    return guests.campaign(cafe_id, body.segment, body.beans, user["uid"])

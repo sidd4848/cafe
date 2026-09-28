@@ -41,6 +41,9 @@ BATCH_FACTOR = 0.35
 ALPHA = 0.2
 Z80 = 1.28  # 80% band
 RELEASE_SLACK_SEC = 60
+# Gap-aware release: when a barista is idle and nothing is queued, start pre-orders due
+# within this window now instead of letting them land on top of a later rush.
+GAP_WINDOW_SEC = 480
 TYPICAL_ORDER_SEC = 140
 
 
@@ -99,6 +102,7 @@ def recompute(cafe_id: str) -> dict:
     updates: dict[str, dict] = {}
     queue_var = 0.0
     position = 0
+    gap_fills = 0
 
     def schedule(o: dict, started: bool) -> None:
         nonlocal queue_var, position
@@ -137,10 +141,15 @@ def recompute(cafe_id: str) -> dict:
         target = _ts(o.get("scheduledFor")) or t
         prep, _ = order_prep(o, menu)
         earliest_ready = max(free[0], t.timestamp()) + prep + overhead
-        if earliest_ready >= target.timestamp() - RELEASE_SLACK_SEC:
+        idle = free[0] <= t.timestamp() and not placed
+        gap_fill = idle and target.timestamp() - t.timestamp() <= prep + overhead + GAP_WINDOW_SEC
+        if earliest_ready >= target.timestamp() - RELEASE_SLACK_SEC or gap_fill:
             o["status"], o["placedAt"] = "placed", t
             schedule(o, started=False)
-            updates[o["id"]].update({"status": "placed", "placedAt": t, "releasedAt": t})
+            reason = "just_in_time" if earliest_ready >= target.timestamp() - RELEASE_SLACK_SEC else "gap_fill"
+            updates[o["id"]].update({"status": "placed", "placedAt": t, "releasedAt": t, "releaseReason": reason})
+            if reason == "gap_fill":
+                gap_fills += 1
         else:
             updates[o["id"]] = {"eta": {
                 "readyAt": target, "lowAt": target, "highAt": target + timedelta(minutes=2),
@@ -165,7 +174,7 @@ def recompute(cafe_id: str) -> dict:
         "etaAbsErrorEwmaSec": round(err_ewma),
         "updatedAt": t,
     }
-    batch.set(stats_ref, live, merge=True)
+    batch.set(stats_ref, {**live, **({"gapFills": firestore.Increment(gap_fills)} if gap_fills else {})}, merge=True)
     batch.commit()
     return live
 

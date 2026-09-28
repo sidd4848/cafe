@@ -1,5 +1,5 @@
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Armchair, Coffee, Compass, Home, LayoutGrid, LogOut, QrCode, Sparkles, Timer, User, Users, UtensilsCrossed } from 'lucide-react';
+import { Armchair, BarChart3, Coffee, Contact, Compass, Home, LayoutGrid, LogOut, QrCode, Sparkles, Timer, User, Users, UtensilsCrossed } from 'lucide-react';
 import { isStaffRole, useAuth } from '@/context/AuthContext';
 import { WaitBadge } from './WaitBadge';
 import { PageLoader } from './ui';
@@ -93,6 +93,8 @@ export function StaffLayout() {
   const links = [
     { to: '/staff', label: 'Orders', icon: LayoutGrid, end: true },
     { to: '/staff/floor', label: 'Floor', icon: Armchair },
+    { to: '/staff/guests', label: 'Guests', icon: Contact },
+    { to: '/staff/impact', label: 'Impact', icon: BarChart3 },
     { to: '/staff/menu', label: 'Menu', icon: UtensilsCrossed },
     { to: '/staff/qr', label: 'Table QR', icon: QrCode },
     ...(me?.role === 'manager' ? [{ to: '/staff/team', label: 'Team', icon: Users }] : []),
