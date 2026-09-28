@@ -2,7 +2,18 @@
 
 import os
 
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "stockscreenerai-6f441")
+import google.auth
+
+
+def _default_project() -> str | None:
+    """Fall back to the project of the active gcloud / Cloud Run credentials."""
+    try:
+        return google.auth.default()[1]
+    except Exception:
+        return None
+
+
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT") or _default_project()
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", PROJECT_ID)
 FIRESTORE_DB = os.getenv("FIRESTORE_DB", "cafedata")
 
@@ -26,9 +37,7 @@ ALLOWED_ORIGINS = [
 ]
 
 # Cloud Scheduler calls /internal/* with an OIDC token minted for this service account.
-SCHEDULER_SA = os.getenv(
-    "SCHEDULER_SA", "screener@stockscreenerai-6f441.iam.gserviceaccount.com"
-)
+SCHEDULER_SA = os.getenv("SCHEDULER_SA", "")
 # Audience the scheduler token must carry; the service's own URL. Blank disables the
 # internal routes rather than accepting any Google token.
 INTERNAL_AUDIENCE = os.getenv("INTERNAL_AUDIENCE", "")

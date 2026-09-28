@@ -1,7 +1,7 @@
 # Cafe Companion — Architecture & Data Design
 
 > Status: **implemented and deployed** (see README for URLs and runbook). §10 covers the dine-in / loyalty additions.
-> Target GCP project: `stockscreenerai-6f441` · region `asia-south1`
+> Target: your GCP / Firebase project (set in `deploy/.env`) · region `asia-south1`
 
 Cafe Companion is an AI layer over a cafe visit, with four pillars:
 
@@ -50,7 +50,7 @@ flowchart LR
 
 | Service | Image | Responsibility | Runtime SA and IAM | Scaling |
 |---|---|---|---|---|
-| **`cafe-api`** | `python:3.11-slim` + uvicorn | All business logic and writes: ordering chat, cart and orders, ETA engine, recommendations, connect, moderation, scheduled jobs | existing `screener@` SA: Agent Platform User, Cloud Datastore User, Logs Writer | min 0 / max 5, concurrency 40, 1 vCPU / 512 Mi |
+| **`cafe-api`** | `python:3.11-slim` + uvicorn | All business logic and writes: ordering chat, cart and orders, ETA engine, recommendations, connect, moderation, scheduled jobs | backend service account (`API_SA`): Agent Platform User, Cloud Datastore User, Logs Writer | min 0 / max 5, concurrency 40, 1 vCPU / 512 Mi |
 | **`cafe-web`** | `nginx:alpine` serving `dist/` | Static SPA. At container start, writes `/config.js` from env vars (`API_URL`, Firebase web config), so **one image works in every environment** | `cafe-web-sa`: no roles | min 0 / max 3, 256 Mi |
 
 Both services allow unauthenticated invocation. `cafe-api` enforces its own auth by verifying Firebase ID tokens. The `/internal/*` routes accept only a Cloud Scheduler OIDC token for `cafe-scheduler-sa`.
@@ -463,7 +463,7 @@ cafe/
 3. **Manual step:** add the `cafe-web` run.app domain to Firebase Auth → Authorized domains.
 4. **Seed:** `python backend/scripts/seed.py` (demo cafe, menu and embeddings, and a staff claim for your account).
 
-Note: the local `gcloud` default project is currently `diet-recommender-30d05`. All scripts pass `--project stockscreenerai-6f441` explicitly and don't change the global config.
+Note: scripts take the project from `deploy/.env` and pass `--project` explicitly; they don't change your global gcloud config.
 
 ## 8. Cost and risk notes
 - Everything scales to zero. The main variable cost is Gemini calls, capped by a per-user limit of 30 chat turns per hour and the 24h cache on recommendation reasons.

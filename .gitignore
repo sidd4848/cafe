@@ -9,3 +9,5 @@ frontend/.env
 *.log
 backend/scripts/*.local.json
 frontend/.env.local
+deploy/.env
+.firebaserc

@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 # Build and deploy Cafe Companion: two Cloud Run services, no load balancer.
 #
-#   cafe-api  FastAPI backend   (runs as the existing screener@ service account)
+#   cafe-api  FastAPI backend   (runs as $API_SA)
 #   cafe-web  nginx + React SPA (no GCP permissions needed)
 #
 # Idempotent: re-run to ship a new version. Firestore rules/indexes/TTL and the seed are
 # separate one-time steps (see README).
 set -euo pipefail
 
-PROJECT=stockscreenerai-6f441
-REGION=asia-south1
-REPO=cafe
-API_SA=screener@${PROJECT}.iam.gserviceaccount.com
-MANAGERS=${BOOTSTRAP_MANAGERS:-ranjansiddharth484848@gmail.com}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
+# Project-specific settings live in deploy/.env (gitignored). See deploy/.env.example.
+[ -f "$ROOT/deploy/.env" ] && { set -a; . "$ROOT/deploy/.env"; set +a; }
+: "${PROJECT:?Set PROJECT in deploy/.env}"
+: "${API_SA:?Set API_SA (the backend service account email) in deploy/.env}"
+REGION=${REGION:-asia-south1}
+REPO=${REPO:-cafe}
+MANAGERS=${BOOTSTRAP_MANAGERS:-}
 TAG=$(date +%Y%m%d-%H%M%S)
 REG=${REGION}-docker.pkg.dev/${PROJECT}/${REPO}
 G="--project=${PROJECT}"
