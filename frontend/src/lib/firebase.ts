@@ -1,6 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { config } from './config';
 
 // Reuse the app across Vite hot reloads (initializeApp twice throws duplicate-app).
@@ -17,3 +17,9 @@ if (import.meta.env.VITE_AUTH_EMULATOR) {
  * Every write goes through the API; firestore.rules deny client writes.
  */
 export const firestore = getFirestore(app, 'cafedata');
+
+// Local testing only: Firestore emulator as "host:port" (never set in the deployed image).
+if (import.meta.env.VITE_FIRESTORE_EMULATOR) {
+  const [host, port] = String(import.meta.env.VITE_FIRESTORE_EMULATOR).split(':');
+  connectFirestoreEmulator(firestore, host, Number(port));
+}

@@ -44,6 +44,43 @@ Payments are **simulated**. No card or UPI details are collected.
 
 ---
 
+## Screenshots
+
+Captured from a local run against the Firebase emulators with demo data.
+
+### Guest app (mobile)
+
+<table>
+<tr><td align="center"><img src="docs/screenshots/02-home.png" alt="Home: loyalty, live order, picks" width="220"><br><sub>Home: loyalty, live order, picks</sub></td><td align="center"><img src="docs/screenshots/03-chat-ordering.png" alt="Chat ordering" width="220"><br><sub>Chat ordering</sub></td><td align="center"><img src="docs/screenshots/04-dietary-filter.png" alt="Dietary filter" width="220"><br><sub>Dietary filter</sub></td></tr>
+<tr><td align="center"><img src="docs/screenshots/05-checkout.png" alt="Checkout and pre-order" width="220"><br><sub>Checkout and pre-order</sub></td><td align="center"><img src="docs/screenshots/06-order-tracker.png" alt="Live order tracker" width="220"><br><sub>Live order tracker</sub></td><td align="center"><img src="docs/screenshots/07-discover.png" alt="Discover: weather-aware picks" width="220"><br><sub>Discover: weather-aware picks</sub></td></tr>
+<tr><td align="center"><img src="docs/screenshots/08-wait-times.png" alt="Wait times and waitlist" width="220"><br><sub>Wait times and waitlist</sub></td><td align="center"><img src="docs/screenshots/09-connect.png" alt="Connect: who's here" width="220"><br><sub>Connect: who's here</sub></td><td align="center"><img src="docs/screenshots/10-connect-chat.png" alt="Connect: 24h chat" width="220"><br><sub>Connect: 24h chat</sub></td></tr>
+<tr><td align="center"><img src="docs/screenshots/11-table-qr-landing.png" alt="Table QR: order, pay, connect" width="220"><br><sub>Table QR: order, pay, connect</sub></td><td align="center"><img src="docs/screenshots/12-loyalty-profile.png" alt="Loyalty profile" width="220"><br><sub>Loyalty profile</sub></td><td align="center"><img src="docs/screenshots/01-login.png" alt="Sign in" width="220"><br><sub>Sign in</sub></td></tr>
+</table>
+
+### Staff console
+
+**Order board with guest notes (VIP, first visit, allergens)**
+
+<img src="docs/screenshots/13-staff-order-board.png" alt="Order board with guest notes (VIP, first visit, allergens)" width="900">
+
+**Floor: tables, waitlist and smart seating**
+
+<img src="docs/screenshots/14-staff-floor.png" alt="Floor: tables, waitlist and smart seating" width="900">
+
+**Guests: profiles, segments and targeting**
+
+<img src="docs/screenshots/15-staff-guests.png" alt="Guests: profiles, segments and targeting" width="900">
+
+**Impact: rush forecast, offers and before vs after (simulated data)**
+
+<img src="docs/screenshots/16-staff-impact.png" alt="Impact: rush forecast, offers and before vs after (simulated data)" width="900">
+
+**Daily-rotating table QR codes**
+
+<img src="docs/screenshots/17-staff-table-qr.png" alt="Daily-rotating table QR codes" width="900">
+
+---
+
 ## Repository layout
 
 ```
@@ -158,29 +195,41 @@ written to `backend/scripts/test_accounts.local.json`, which is gitignored and n
 - **Demo data:** in **Staff → Impact**, a manager can press **Simulate 2 weeks** to generate
   tagged demo history (useful for pitching), and **Clear demo** to remove it.
 
-### Optional: fully local sign-in (Firebase Auth emulator)
+### Optional: fully local stack (Firebase emulators)
 
-Use this to test sign-in without touching real Auth accounts. Firestore stays the real database, but the
-live listeners will be rejected, and the app falls back to polling where it can.
+Run everything locally without touching real accounts or data. The Firestore emulator needs Java 21+.
+A project ID starting with `demo-` keeps the emulators sandboxed. Gemini calls still go to your real project.
 
 ```bash
-firebase emulators:start --only auth
+firebase emulators:start --only auth,firestore --project demo-cafe
+```
+
+Point the UI at the emulators with a `frontend/.env.local` file (gitignored) containing:
+
+```dotenv
+VITE_AUTH_EMULATOR=http://127.0.0.1:9099
+VITE_FIRESTORE_EMULATOR=127.0.0.1:8085
+VITE_FIREBASE_PROJECT_ID=demo-cafe
+```
+
+In a shell inside `backend/` (virtual environment active), set the emulator variables once:
+
+```bash
+export FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-cafe GOOGLE_CLOUD_PROJECT=your-project-id PYTHONPATH=.
+```
+
+Seed the emulator, create the test accounts inside it, then start the API:
+
+```bash
+python -m scripts.seed
 ```
 
 ```bash
-echo "VITE_AUTH_EMULATOR=http://127.0.0.1:9099" > frontend/.env.local
+python -m scripts.create_test_accounts
 ```
 
-Run the API with the emulator host set:
-
 ```bash
-FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 GOOGLE_CLOUD_PROJECT=your-project-id PYTHONPATH=. uvicorn app.main:app --port 8080
-```
-
-Create the test accounts inside the emulator:
-
-```bash
-FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 GOOGLE_CLOUD_PROJECT=your-project-id PYTHONPATH=. python -m scripts.create_test_accounts
+uvicorn app.main:app --port 8080
 ```
 
 Delete `frontend/.env.local` to go back to real Auth.

@@ -126,7 +126,7 @@ export default function ImpactPage() {
               <div className="space-y-1.5">
                 {impact.arms.map((arm) => (
                   <div key={arm.beans} className="flex items-center gap-2 text-sm">
-                    <span className="w-16">+{arm.beans} beans</span>
+                    <span className="w-20 whitespace-nowrap">+{arm.beans} beans</span>
                     <div className="h-2 flex-1 rounded-full bg-cream-200"><div className="h-full rounded-full bg-ember-500" style={{ width: pct(arm.rate ?? 0) }} /></div>
                     <span className="w-24 text-right text-xs text-bean-500">{pct(arm.rate)} of {arm.offered}</span>
                   </div>

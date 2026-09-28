@@ -5,12 +5,12 @@ from functools import lru_cache
 
 from google.cloud import firestore
 
-from app.config import FIRESTORE_DB, PROJECT_ID
+from app.config import FIREBASE_PROJECT_ID, FIRESTORE_DB
 
 
 @lru_cache(maxsize=1)
 def db() -> firestore.Client:
-    return firestore.Client(project=PROJECT_ID, database=FIRESTORE_DB)
+    return firestore.Client(project=FIREBASE_PROJECT_ID, database=FIRESTORE_DB)
 
 
 def now() -> datetime:

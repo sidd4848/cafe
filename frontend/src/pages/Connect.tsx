@@ -158,16 +158,16 @@ function HereNow({ cafeId, presence, outgoing, onCheckout }: { cafeId: string; p
       {!people ? <PageLoader /> : people.length === 0 ? (
         <Empty icon={<UserPlus className="h-5 w-5" />} title="Nobody else has checked in yet">We'll refresh this every few seconds.</Empty>
       ) : (
-        <div className="grid gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5">
           {people.map((p) => (
-            <div key={p.uid} className="card p-4">
-              <div className="flex items-center gap-3">
+            <div key={p.uid} className="card min-w-0 p-4">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className="grid h-10 w-10 place-items-center rounded-full bg-cream-200 font-display text-lg">{p.firstName[0]}</div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{p.firstName} {p.mood && <span className="text-xs font-normal text-bean-500">· {p.mood}</span>}</p>
                   <p className="truncate text-xs text-bean-500">{p.bio}</p>
                 </div>
-                <button className="btn-accent px-3 py-2" disabled={pendingTo.has(p.uid)} onClick={() => setTarget(p)}>
+                <button className="btn-accent shrink-0 px-3 py-2" disabled={pendingTo.has(p.uid)} onClick={() => setTarget(p)}>
                   {pendingTo.has(p.uid) ? 'Sent' : <><Sparkles className="h-4 w-4" /> Spark</>}
                 </button>
               </div>
